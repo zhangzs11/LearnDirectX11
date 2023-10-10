@@ -12,7 +12,7 @@ struct PixelInputType
 float4 main(PixelInputType input) : SV_TARGET
 {
     float3 lightDir = normalize(lightPosition.xyz - input.worldPos.xyz);
-    float diffuseIntensity = max(0.0f, dot(input.normal, lightDir));
+    float diffuseIntensity = max(0.1f, dot(input.normal, lightDir));
     
-    return float4(1.0f, 0.0f, 0.0f, 1.0f) * diffuseIntensity;
+    return float4(0.0f, 1.0f, 1.0f, 1.0f) * diffuseIntensity;
 }
