@@ -1,16 +1,31 @@
-struct VS_INPUT
+cbuffer MatrixBuffer
+{
+    matrix worldMatrix;
+    matrix viewMatrix;
+    matrix projectionMatrix;
+};
+struct VertexInputType
 {
     float4 position : POSITION;
+    float3 normal : NORMAL;
 };
-
-struct VS_OUTPUT
+struct PixelInputType
 {
     float4 position : SV_POSITION;
+    float3 normal : NORMAL;
+    float4 worldPos : TEXCOORD0;
 };
-
-VS_OUTPUT main(VS_INPUT input)
+PixelInputType main(VertexInputType input)
 {
-    VS_OUTPUT output;
-    output.position = input.position;
+    PixelInputType output;
+    
+    input.position.w = 1.0f;
+    output.position = mul(input.position, worldMatrix);
+    output.position = mul(output.position, viewMatrix);
+    output.position = mul(output.position, projectionMatrix);
+    
+    output.normal = input.normal;
+    output.worldPos = input.position;
+    
     return output;
 }
