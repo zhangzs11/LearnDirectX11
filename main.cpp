@@ -23,6 +23,9 @@ ID3D11InputLayout* pLayout;
 ID3D11Buffer* matrixBuffer;
 ID3D11Buffer* lightBuffer;
 
+ID3D11ShaderResourceView* texture;
+ID3D11SamplerState* samplerState;
+
 ID3D11RasterizerState* pRasterState;
 
 Camera camera;
@@ -32,19 +35,21 @@ void RenderFrame(void);
 void CleanD3D(void);
 void CreateMyWindow(HWND& hWnd, HINSTANCE hInstance, int nCmdSHow);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdSHow) {
+	CoInitialize(NULL);
+
 	HWND hWnd;
 	CreateMyWindow(hWnd, hInstance, nCmdSHow);
 
-	InitD3D(hWnd, dev, devcon, swapchain, backbuffer, pVertexShader, pPixelShader, pLayout, pVertexBuffer, pIndexBuffer, pRasterState, matrixBuffer, lightBuffer);
+	InitD3D(hWnd, dev, devcon, swapchain, backbuffer, pVertexShader, pPixelShader, pLayout, pVertexBuffer, pIndexBuffer, pRasterState, matrixBuffer, lightBuffer, texture, samplerState);
 
 	ShowWindow(hWnd, nCmdSHow);
-
 	MSG msg;
 	while (TRUE) {
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 			if (msg.message == WM_QUIT)
+				//CoUninitialize();
 				break;
 		}
 		UpdateConstBuffer();
@@ -75,7 +80,7 @@ void UpdateConstBuffer(void) {
 	dataPtr2->lightPosition = DirectX::XMVectorSet(2.0f, 2.0f, 0.0f, 1.0f);
 	dataPtr2->lightColor = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f);
 	devcon->Unmap(lightBuffer, 0);
-	devcon->PSSetConstantBuffers(0, 1, &lightBuffer);
+	devcon->PSSetConstantBuffers(1, 1, &lightBuffer);
 }
 void RenderFrame(void) {
 	float color[4] = { 0.0f, 0.9f, 0.4f, 1.0f };

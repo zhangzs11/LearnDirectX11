@@ -1,4 +1,4 @@
-cbuffer MatrixBuffer
+cbuffer MatrixBuffer : register(b0)
 {
     matrix worldMatrix;
     matrix viewMatrix;
@@ -8,12 +8,14 @@ struct VertexInputType
 {
     float4 position : POSITION;
     float3 normal : NORMAL;
+    float2 texCoord : TEXCOORD;
 };
 struct PixelInputType
 {
     float4 position : SV_POSITION;
     float3 normal : NORMAL;
     float4 worldPos : TEXCOORD0;
+    float2 uv : TEXCOORD1;
 };
 PixelInputType main(VertexInputType input)
 {
@@ -26,6 +28,7 @@ PixelInputType main(VertexInputType input)
     
     output.normal = input.normal;
     output.worldPos = input.position;
+    output.uv = input.texCoord;
     
     return output;
 }

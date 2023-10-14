@@ -1,16 +1,29 @@
 #include "InitD3D.h"
-void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGISwapChain*& swapchain, ID3D11RenderTargetView*& backbuffer, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer, ID3D11RasterizerState*& pRasterState, ID3D11Buffer*& matrixBuffer, ID3D11Buffer*& lightBuffer) {
+void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGISwapChain*& swapchain, ID3D11RenderTargetView*& backbuffer, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer, ID3D11RasterizerState*& pRasterState, ID3D11Buffer*& matrixBuffer, ID3D11Buffer*& lightBuffer, ID3D11ShaderResourceView*& texture, ID3D11SamplerState*& samplerState) {
 	DXGI_SWAP_CHAIN_DESC scd;
 	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 
 	scd.BufferCount = 1;
-	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;					//scd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD / DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.OutputWindow = hWnd;
 	scd.SampleDesc.Count = 4;
 	scd.Windowed = TRUE;
 
-	HRESULT hrCD = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, NULL, D3D11_SDK_VERSION, &scd, &swapchain, &dev, NULL, &devcon);
+	HRESULT hrCD = D3D11CreateDeviceAndSwapChain(
+		NULL, 
+		D3D_DRIVER_TYPE_HARDWARE, 
+		NULL, 
+		D3D11_CREATE_DEVICE_DEBUG,
+		NULL, 
+		NULL,
+		D3D11_SDK_VERSION, 
+		&scd, 
+		&swapchain,
+		&dev,
+		NULL, 
+		&devcon
+	);
 	if (FAILED(hrCD)) {
 		OutputDebugStringA("Failed to create device.\n");
 		return;
@@ -49,8 +62,10 @@ void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGI
 	InitPipeline(dev, devcon, pVertexShader, pPixelShader, pLayout);
 	InitGraphics(dev, pVertexBuffer, pIndexBuffer);
 	InitRasterizerState(dev, devcon, pRasterState);
+	InitTextureSource(dev, devcon, texture);
+	InitTextureSampler(dev, samplerState);
+	BindTextureAndSampler(devcon, texture, samplerState);
 	InitConstBuffer(dev, matrixBuffer, lightBuffer);
-
 }
 void InitPipeline(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout) {
 	ID3DBlob* pVS, * pPS, * pErrorBlob;
@@ -74,17 +89,26 @@ void InitPipeline(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11Vertex
 	}
 
 	dev->CreateVertexShader(pVS->GetBufferPointer(), pVS->GetBufferSize(), NULL, &pVertexShader);
+	if (!pVertexShader) {
+		OutputDebugStringA("Failed to create vertex shader.\n");
+	}
 	dev->CreatePixelShader(pPS->GetBufferPointer(), pPS->GetBufferSize(), NULL, &pPixelShader);
-
+	if (!pPixelShader) {
+		OutputDebugStringA("Failed to create pixel shader.\n");
+	}
 	devcon->VSSetShader(pVertexShader, 0, 0);
 	devcon->PSSetShader(pPixelShader, 0, 0);
 
 	D3D11_INPUT_ELEMENT_DESC ied[] = {
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
 
-	dev->CreateInputLayout(ied, 1, pVS->GetBufferPointer(), pVS->GetBufferSize(), &pLayout);
+	HRESULT hr = dev->CreateInputLayout(ied, 3, pVS->GetBufferPointer(), pVS->GetBufferSize(), &pLayout);
+	if (FAILED(hr)) {
+		OutputDebugStringA("Failed to create input layout.\n");
+	}
 	devcon->IASetInputLayout(pLayout);
 
 	pVS->Release();
@@ -92,35 +116,35 @@ void InitPipeline(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11Vertex
 }
 void InitGraphics(ID3D11Device*& dev, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer) {
 	VertexType vertices[] = {
-		{-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f},//FONRT
-		{ 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
-		{ 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
-		{-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f},
+		{-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f},//FONRT
+		{ 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f},
+		{ 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f},
+		{-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f},
 
-		{-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f},//RARE
-		{ 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
-		{ 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
-		{-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f},
+		{-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f},//RARE
+		{ 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f},
+		{ 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f},
+		{-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f},
 
-		{-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f},//TOP
-		{ 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f},
-		{ 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f},
-		{-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f},
+		{-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f},//TOP
+		{ 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f},
+		{ 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f},
+		{-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f},
 
-		{-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f},//BOTTOM
-		{ 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f},
-		{ 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f},
-		{-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f},
+		{-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f},//BOTTOM
+		{ 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f},
+		{ 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f},
+		{-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f},
 
-		{-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f},//LEFT
-		{-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f},
-		{-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f},
-		{-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f},
+		{-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f},//LEFT
+		{-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f},
+		{-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f},
+		{-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f},
 
-		{ 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f},//RIGHT
-		{ 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f},
-		{ 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f},
-		{ 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f},
+		{ 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f},//RIGHT
+		{ 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f},
+		{ 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f},
+		{ 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f},
 	};
 
 	unsigned short indices[] = {
@@ -197,4 +221,38 @@ void InitConstBuffer(ID3D11Device*& dev, ID3D11Buffer*& matrixBuffer, ID3D11Buff
 	lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	dev->CreateBuffer(&lightBufferDesc, NULL, &lightBuffer);
+}
+void InitTextureSource(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11ShaderResourceView*& texture) {
+	HRESULT hr = DirectX::CreateWICTextureFromFile(dev, devcon, L"resource/brickwall.jpg", nullptr, &texture, 0);
+	if (FAILED(hr)) {
+		LPVOID lpMsgBuf;
+		FormatMessage(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+			NULL,
+			hr,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			(LPWSTR)&lpMsgBuf,
+			0,
+			NULL
+		);
+		OutputDebugStringA("Failed to load texture.\n");
+		OutputDebugString((LPWSTR)lpMsgBuf);
+		LocalFree(lpMsgBuf);
+	}
+}
+void InitTextureSampler(ID3D11Device*& dev, ID3D11SamplerState*& samplerState) {
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(sampDesc));
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	dev->CreateSamplerState(&sampDesc, &samplerState);
+}
+void BindTextureAndSampler(ID3D11DeviceContext*& devcon, ID3D11ShaderResourceView*& texture, ID3D11SamplerState*& samplerState) {
+	devcon->PSSetShaderResources(0, 1, &texture);
+	devcon->PSSetSamplers(0, 1, &samplerState);
 }
