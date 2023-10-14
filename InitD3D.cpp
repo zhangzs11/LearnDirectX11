@@ -1,5 +1,5 @@
 #include "InitD3D.h"
-void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGISwapChain*& swapchain, ID3D11RenderTargetView*& backbuffer, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer, ID3D11RasterizerState*& pRasterState, ID3D11Buffer*& matrixBuffer, ID3D11Buffer*& lightBuffer, ID3D11ShaderResourceView*& texture, ID3D11SamplerState*& samplerState) {
+void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGISwapChain*& swapchain, ID3D11RenderTargetView*& backbuffer, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer, ID3D11RasterizerState*& pRasterState, ID3D11Buffer*& matrixBuffer, ID3D11Buffer*& lightBuffer, ID3D11ShaderResourceView*& texture1, ID3D11SamplerState*& samplerState1, ID3D11ShaderResourceView*& texture2, ID3D11SamplerState*& samplerState2){
 	DXGI_SWAP_CHAIN_DESC scd;
 	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 
@@ -62,9 +62,9 @@ void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGI
 	InitPipeline(dev, devcon, pVertexShader, pPixelShader, pLayout);
 	InitGraphics(dev, pVertexBuffer, pIndexBuffer);
 	InitRasterizerState(dev, devcon, pRasterState);
-	InitTextureSource(dev, devcon, texture);
-	InitTextureSampler(dev, samplerState);
-	BindTextureAndSampler(devcon, texture, samplerState);
+	InitTextureSource(dev, devcon, texture1, texture2);
+	InitTextureSampler(dev, samplerState1, samplerState2);
+	BindTextureAndSampler(devcon, texture1, samplerState1, texture2, samplerState2);
 	InitConstBuffer(dev, matrixBuffer, lightBuffer);
 }
 void InitPipeline(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout) {
@@ -103,9 +103,10 @@ void InitPipeline(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11Vertex
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
-
-	HRESULT hr = dev->CreateInputLayout(ied, 3, pVS->GetBufferPointer(), pVS->GetBufferSize(), &pLayout);
+	HRESULT hr = dev->CreateInputLayout(ied, 5, pVS->GetBufferPointer(), pVS->GetBufferSize(), &pLayout);
 	if (FAILED(hr)) {
 		OutputDebugStringA("Failed to create input layout.\n");
 	}
@@ -116,37 +117,37 @@ void InitPipeline(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11Vertex
 }
 void InitGraphics(ID3D11Device*& dev, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer) {
 	VertexType vertices[] = {
-		{-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f},//FONRT
-		{ 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f},
-		{ 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f},
-		{-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f},
-
-		{-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f},//RARE
-		{ 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f},
-		{ 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f},
-		{-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f},
-
-		{-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f},//TOP
-		{ 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f},
-		{ 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f},
-		{-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f},
-
-		{-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f},//BOTTOM
-		{ 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f},
-		{ 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f},
-		{-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f},
-
-		{-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f},//LEFT
-		{-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f},
-		{-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f},
-		{-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f},
-
-		{ 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f},//RIGHT
-		{ 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f},
-		{ 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f},
-		{ 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f},
+		//FONRT
+		{DirectX::XMFLOAT3(-0.5f, -0.5f, -0.5f), DirectX::XMFLOAT3(0.0f,  0.0f, -1.0f), DirectX::XMFLOAT2(0.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3( 0.5f, -0.5f, -0.5f), DirectX::XMFLOAT3(0.0f,  0.0f, -1.0f), DirectX::XMFLOAT2(1.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(0.5f,  0.5f, -0.5f), DirectX::XMFLOAT3(0.0f,  0.0f, -1.0f), DirectX::XMFLOAT2(1.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(-0.5f,  0.5f, -0.5f), DirectX::XMFLOAT3(0.0f,  0.0f, -1.0f), DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		//RARE
+		{DirectX::XMFLOAT3(-0.5f, -0.5f, 0.5f), DirectX::XMFLOAT3(0.0f,  0.0f, 1.0f), DirectX::XMFLOAT2(0.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(0.5f, -0.5f, 0.5f), DirectX::XMFLOAT3(0.0f,  0.0f, 1.0f), DirectX::XMFLOAT2(1.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(0.5f,  0.5f, 0.5f), DirectX::XMFLOAT3(0.0f,  0.0f, 1.0f), DirectX::XMFLOAT2(1.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(-0.5f,  0.5f, 0.5f), DirectX::XMFLOAT3(0.0f,  0.0f, 1.0f), DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		//TOP
+		{DirectX::XMFLOAT3(-0.5f, 0.5f, -0.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(0.5f, 0.5f, -0.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(0.5f,  0.5f, 0.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(-0.5f,  0.5f, 0.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		//BOTTOM
+		{DirectX::XMFLOAT3(-0.5f, -0.5f, -0.5f), DirectX::XMFLOAT3(0.0f,  -1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(0.5f, -0.5f, -0.5f), DirectX::XMFLOAT3(0.0f,  -1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(0.5f,  -0.5f, 0.5f), DirectX::XMFLOAT3(0.0f,  -1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(-0.5f,  -0.5f, 0.5f), DirectX::XMFLOAT3(0.0f,  -1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		//LEFT
+		{DirectX::XMFLOAT3(-0.5f, -0.5f, -0.5f), DirectX::XMFLOAT3(-1.0f,  0.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(-0.5f, -0.5f, 0.5f), DirectX::XMFLOAT3(-1.0f,  0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(-0.5f,  0.5f, 0.5f), DirectX::XMFLOAT3(-1.0f,  0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(-0.5f,  0.5f, -0.5f), DirectX::XMFLOAT3(-1.0f,  0.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		//RIGHT
+		{DirectX::XMFLOAT3(0.5f, -0.5f, -0.5f), DirectX::XMFLOAT3(1.0f,  0.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(0.5f, -0.5f, 0.5f), DirectX::XMFLOAT3(1.0f,  0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(0.5f,  0.5f, 0.5f), DirectX::XMFLOAT3(1.0f,  0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(0.5f,  0.5f, -0.5f), DirectX::XMFLOAT3(1.0f,  0.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
 	};
-
 	unsigned short indices[] = {
 		0,  1,  2,
 		0,  2,  3,
@@ -166,7 +167,38 @@ void InitGraphics(ID3D11Device*& dev, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer
 		20, 21, 22,
 		20, 22, 23,
 	};
+	for (int i = 0; i < sizeof(indices) / sizeof(unsigned short); i += 3) {
+		VertexType& v0 = vertices[indices[i]];
+		VertexType& v1 = vertices[indices[i + 1]];
+		VertexType& v2 = vertices[indices[i + 2]];
 
+		DirectX::XMVECTOR edge1 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&v1.position), DirectX::XMLoadFloat3(&v0.position));
+		DirectX::XMVECTOR edge2 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&v2.position), DirectX::XMLoadFloat3(&v0.position));
+
+		DirectX::XMVECTOR deltaUV1 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&v1.texCoord), DirectX::XMLoadFloat2(&v0.texCoord));
+		DirectX::XMVECTOR deltaUV2 = DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(&v2.texCoord), DirectX::XMLoadFloat2(&v0.texCoord));
+
+		float f = 1.0f / (DirectX::XMVectorGetX(deltaUV1) * DirectX::XMVectorGetY(deltaUV2) - DirectX::XMVectorGetX(deltaUV2) * DirectX::XMVectorGetY(deltaUV1));
+
+		DirectX::XMVECTOR tangent = DirectX::XMVectorZero();;
+		tangent = DirectX::XMVectorSetX(tangent, f * (DirectX::XMVectorGetY(deltaUV2) * DirectX::XMVectorGetX(edge1) - DirectX::XMVectorGetY(deltaUV1) * DirectX::XMVectorGetX(edge2)));
+		tangent = DirectX::XMVectorSetY(tangent, f * (DirectX::XMVectorGetY(deltaUV2) * DirectX::XMVectorGetY(edge1) - DirectX::XMVectorGetY(deltaUV1) * DirectX::XMVectorGetY(edge2)));
+		tangent = DirectX::XMVectorSetZ(tangent, f * (DirectX::XMVectorGetY(deltaUV2) * DirectX::XMVectorGetZ(edge1) - DirectX::XMVectorGetY(deltaUV1) * DirectX::XMVectorGetZ(edge2)));
+		tangent = DirectX::XMVector3Normalize(tangent);
+
+		DirectX::XMVECTOR bitangent = DirectX::XMVectorZero();;
+		bitangent = DirectX::XMVectorSetX(bitangent, f * (-DirectX::XMVectorGetX(deltaUV2) * DirectX::XMVectorGetX(edge1) + DirectX::XMVectorGetX(deltaUV1) * DirectX::XMVectorGetX(edge2)));
+		bitangent = DirectX::XMVectorSetY(bitangent, f * (-DirectX::XMVectorGetX(deltaUV2) * DirectX::XMVectorGetY(edge1) + DirectX::XMVectorGetX(deltaUV1) * DirectX::XMVectorGetY(edge2)));
+		bitangent = DirectX::XMVectorSetZ(bitangent, f * (-DirectX::XMVectorGetX(deltaUV2) * DirectX::XMVectorGetZ(edge1) + DirectX::XMVectorGetX(deltaUV1) * DirectX::XMVectorGetZ(edge2)));
+		bitangent = DirectX::XMVector3Normalize(bitangent);
+
+		DirectX::XMStoreFloat3(&v0.tangent, tangent);
+		DirectX::XMStoreFloat3(&v1.tangent, tangent);
+		DirectX::XMStoreFloat3(&v2.tangent, tangent);
+		DirectX::XMStoreFloat3(&v0.bitangent, bitangent);
+		DirectX::XMStoreFloat3(&v1.bitangent, bitangent);
+		DirectX::XMStoreFloat3(&v2.bitangent, bitangent);
+	}
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 	bd.Usage = D3D11_USAGE_DEFAULT;
@@ -222,14 +254,30 @@ void InitConstBuffer(ID3D11Device*& dev, ID3D11Buffer*& matrixBuffer, ID3D11Buff
 	lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	dev->CreateBuffer(&lightBufferDesc, NULL, &lightBuffer);
 }
-void InitTextureSource(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11ShaderResourceView*& texture) {
-	HRESULT hr = DirectX::CreateWICTextureFromFile(dev, devcon, L"resource/brickwall.jpg", nullptr, &texture, 0);
-	if (FAILED(hr)) {
+void InitTextureSource(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11ShaderResourceView*& texture1, ID3D11ShaderResourceView*& texture2) {
+	HRESULT hr1 = DirectX::CreateWICTextureFromFile(dev, devcon, L"resource/brickwall.jpg", nullptr, &texture1, 0);
+	if (FAILED(hr1)) {
 		LPVOID lpMsgBuf;
 		FormatMessage(
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
 			NULL,
-			hr,
+			hr1,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			(LPWSTR)&lpMsgBuf,
+			0,
+			NULL
+		);
+		OutputDebugStringA("Failed to load texture.\n");
+		OutputDebugString((LPWSTR)lpMsgBuf);
+		LocalFree(lpMsgBuf);
+	}
+	HRESULT hr2 = DirectX::CreateWICTextureFromFile(dev, devcon, L"resource/brickwall_normal.jpg", nullptr, &texture2, 0);
+	if (FAILED(hr2)) {
+		LPVOID lpMsgBuf;
+		FormatMessage(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+			NULL,
+			hr2,
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 			(LPWSTR)&lpMsgBuf,
 			0,
@@ -240,7 +288,7 @@ void InitTextureSource(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11S
 		LocalFree(lpMsgBuf);
 	}
 }
-void InitTextureSampler(ID3D11Device*& dev, ID3D11SamplerState*& samplerState) {
+void InitTextureSampler(ID3D11Device*& dev, ID3D11SamplerState*& samplerState1, ID3D11SamplerState*& samplerState2) {
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -250,9 +298,12 @@ void InitTextureSampler(ID3D11Device*& dev, ID3D11SamplerState*& samplerState) {
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	dev->CreateSamplerState(&sampDesc, &samplerState);
+	dev->CreateSamplerState(&sampDesc, &samplerState1);
+	dev->CreateSamplerState(&sampDesc, &samplerState2);
 }
-void BindTextureAndSampler(ID3D11DeviceContext*& devcon, ID3D11ShaderResourceView*& texture, ID3D11SamplerState*& samplerState) {
-	devcon->PSSetShaderResources(0, 1, &texture);
-	devcon->PSSetSamplers(0, 1, &samplerState);
+void BindTextureAndSampler(ID3D11DeviceContext*& devcon, ID3D11ShaderResourceView*& texture1, ID3D11SamplerState*& samplerState1, ID3D11ShaderResourceView*& texture2, ID3D11SamplerState*& samplerState2) {
+	devcon->PSSetShaderResources(0, 1, &texture1);
+	devcon->PSSetSamplers(0, 1, &samplerState1);
+	devcon->PSSetShaderResources(1, 1, &texture1);
+	devcon->PSSetSamplers(1, 1, &samplerState1);
 }

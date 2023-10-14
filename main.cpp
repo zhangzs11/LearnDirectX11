@@ -25,6 +25,8 @@ ID3D11Buffer* lightBuffer;
 
 ID3D11ShaderResourceView* texture;
 ID3D11SamplerState* samplerState;
+ID3D11ShaderResourceView* normaltexture;
+ID3D11SamplerState* normalsamplerState;
 
 ID3D11RasterizerState* pRasterState;
 
@@ -40,7 +42,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	HWND hWnd;
 	CreateMyWindow(hWnd, hInstance, nCmdSHow);
 
-	InitD3D(hWnd, dev, devcon, swapchain, backbuffer, pVertexShader, pPixelShader, pLayout, pVertexBuffer, pIndexBuffer, pRasterState, matrixBuffer, lightBuffer, texture, samplerState);
+	InitD3D(hWnd, dev, devcon, swapchain, backbuffer, pVertexShader, pPixelShader, pLayout, pVertexBuffer, pIndexBuffer, pRasterState, matrixBuffer, lightBuffer, texture, samplerState, normaltexture, normalsamplerState);
 
 	ShowWindow(hWnd, nCmdSHow);
 	MSG msg;
