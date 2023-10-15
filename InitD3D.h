@@ -1,5 +1,7 @@
 #pragma once
 #include <windows.h>
+#include <vector>
+#include <string>
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
@@ -30,11 +32,11 @@ struct VertexType
 	//float tx, ty, tz;		//Tangent
 	//float btx, bty, btz;	//Bitangent
 };
-void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGISwapChain*& swapchain, ID3D11RenderTargetView*& backbuffer, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer, ID3D11RasterizerState*& pRasterState, ID3D11Buffer*& matrixBuffer, ID3D11Buffer*& lightBuffer, ID3D11ShaderResourceView*& texture1, ID3D11SamplerState*& samplerState1, ID3D11ShaderResourceView*& texture2, ID3D11SamplerState*& samplerState2);
+void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGISwapChain*& swapchain, ID3D11RenderTargetView*& backbuffer, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer, ID3D11RasterizerState*& pRasterState, ID3D11Buffer*& matrixBuffer, ID3D11Buffer*& lightBuffer, const std::vector<std::wstring>& texturepaths, std::vector<ID3D11ShaderResourceView*>& textures, std::vector<ID3D11SamplerState*>& samplers);
 void InitPipeline(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout);
 void InitGraphics(ID3D11Device*& dev, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer);
 void InitConstBuffer(ID3D11Device*& dev, ID3D11Buffer*& matrixBuffer, ID3D11Buffer*& lightBuffer);
 void InitRasterizerState(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11RasterizerState*& pRasterState);
-void InitTextureSource(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11ShaderResourceView*& texture1, ID3D11ShaderResourceView*& texture2);
-void InitTextureSampler(ID3D11Device*& dev, ID3D11SamplerState*& samplerState1, ID3D11SamplerState*& samplerState2);
-void BindTextureAndSampler(ID3D11DeviceContext*& devcon, ID3D11ShaderResourceView*& texture1, ID3D11SamplerState*& samplerState1, ID3D11ShaderResourceView*& texture2, ID3D11SamplerState*& samplerState2);
+void InitTextureSource(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, const std::vector<std::wstring>& texturepaths, std::vector<ID3D11ShaderResourceView*>& textures);
+void InitTextureSampler(ID3D11Device*& dev, size_t count, std::vector<ID3D11SamplerState*>& samplers);
+void BindTextureAndSampler(ID3D11DeviceContext*& devcon, const std::vector<ID3D11ShaderResourceView*>& textures, const std::vector<ID3D11SamplerState*>& samplers);

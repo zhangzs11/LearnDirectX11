@@ -23,6 +23,9 @@ ID3D11InputLayout* pLayout;
 ID3D11Buffer* matrixBuffer;
 ID3D11Buffer* lightBuffer;
 
+std::vector<std::wstring> texturePaths;
+std::vector<ID3D11ShaderResourceView*> textures;
+std::vector<ID3D11SamplerState*> samplers;
 ID3D11ShaderResourceView* texture;
 ID3D11SamplerState* samplerState;
 ID3D11ShaderResourceView* normaltexture;
@@ -32,6 +35,7 @@ ID3D11RasterizerState* pRasterState;
 
 Camera camera;
 
+void SetTexturePathes(void);
 void UpdateConstBuffer(void);
 void RenderFrame(void);
 void CleanD3D(void);
@@ -41,8 +45,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	HWND hWnd;
 	CreateMyWindow(hWnd, hInstance, nCmdSHow);
-
-	InitD3D(hWnd, dev, devcon, swapchain, backbuffer, pVertexShader, pPixelShader, pLayout, pVertexBuffer, pIndexBuffer, pRasterState, matrixBuffer, lightBuffer, texture, samplerState, normaltexture, normalsamplerState);
+	SetTexturePathes();
+	InitD3D(hWnd, dev, devcon, swapchain, backbuffer, pVertexShader, pPixelShader, pLayout, pVertexBuffer, pIndexBuffer, pRasterState, matrixBuffer, lightBuffer, texturePaths, textures, samplers);
 
 	ShowWindow(hWnd, nCmdSHow);
 	MSG msg;
@@ -61,6 +65,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	CleanD3D();
 
 	return static_cast<int>(msg.wParam);
+}
+void SetTexturePathes(void) {
+	texturePaths = { L"resource/brickwall.jpg", L"resource/brickwall_normal.jpg" };
 }
 void UpdateConstBuffer(void) {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;

@@ -1,5 +1,5 @@
 #include "InitD3D.h"
-void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGISwapChain*& swapchain, ID3D11RenderTargetView*& backbuffer, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer, ID3D11RasterizerState*& pRasterState, ID3D11Buffer*& matrixBuffer, ID3D11Buffer*& lightBuffer, ID3D11ShaderResourceView*& texture1, ID3D11SamplerState*& samplerState1, ID3D11ShaderResourceView*& texture2, ID3D11SamplerState*& samplerState2){
+void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGISwapChain*& swapchain, ID3D11RenderTargetView*& backbuffer, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer, ID3D11RasterizerState*& pRasterState, ID3D11Buffer*& matrixBuffer, ID3D11Buffer*& lightBuffer, const std::vector<std::wstring>& texturepaths, std::vector<ID3D11ShaderResourceView*>& textures, std::vector<ID3D11SamplerState*>& samplers) {
 	DXGI_SWAP_CHAIN_DESC scd;
 	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 
@@ -62,9 +62,9 @@ void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGI
 	InitPipeline(dev, devcon, pVertexShader, pPixelShader, pLayout);
 	InitGraphics(dev, pVertexBuffer, pIndexBuffer);
 	InitRasterizerState(dev, devcon, pRasterState);
-	InitTextureSource(dev, devcon, texture1, texture2);
-	InitTextureSampler(dev, samplerState1, samplerState2);
-	BindTextureAndSampler(devcon, texture1, samplerState1, texture2, samplerState2);
+	InitTextureSource(dev, devcon, texturepaths, textures);
+	InitTextureSampler(dev, textures.size(), samplers);
+	BindTextureAndSampler(devcon, textures, samplers);
 	InitConstBuffer(dev, matrixBuffer, lightBuffer);
 }
 void InitPipeline(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout) {
@@ -254,41 +254,31 @@ void InitConstBuffer(ID3D11Device*& dev, ID3D11Buffer*& matrixBuffer, ID3D11Buff
 	lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	dev->CreateBuffer(&lightBufferDesc, NULL, &lightBuffer);
 }
-void InitTextureSource(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11ShaderResourceView*& texture1, ID3D11ShaderResourceView*& texture2) {
-	HRESULT hr1 = DirectX::CreateWICTextureFromFile(dev, devcon, L"resource/brickwall.jpg", nullptr, &texture1, 0);
-	if (FAILED(hr1)) {
-		LPVOID lpMsgBuf;
-		FormatMessage(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-			NULL,
-			hr1,
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			(LPWSTR)&lpMsgBuf,
-			0,
-			NULL
-		);
-		OutputDebugStringA("Failed to load texture.\n");
-		OutputDebugString((LPWSTR)lpMsgBuf);
-		LocalFree(lpMsgBuf);
-	}
-	HRESULT hr2 = DirectX::CreateWICTextureFromFile(dev, devcon, L"resource/brickwall_normal.jpg", nullptr, &texture2, 0);
-	if (FAILED(hr2)) {
-		LPVOID lpMsgBuf;
-		FormatMessage(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-			NULL,
-			hr2,
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			(LPWSTR)&lpMsgBuf,
-			0,
-			NULL
-		);
-		OutputDebugStringA("Failed to load texture.\n");
-		OutputDebugString((LPWSTR)lpMsgBuf);
-		LocalFree(lpMsgBuf);
+void InitTextureSource(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, const std::vector<std::wstring>& texturepaths, std::vector<ID3D11ShaderResourceView*>& textures) {
+	for (const auto& path : texturepaths) {
+		ID3D11ShaderResourceView* tempTexture;
+		HRESULT hr = DirectX::CreateWICTextureFromFile(dev, devcon, path.c_str(), nullptr, &tempTexture, 0);
+		if (SUCCEEDED(hr)) {
+			textures.push_back(tempTexture);
+		}
+		else if (FAILED(hr)) {
+			LPVOID lpMsgBuf;
+			FormatMessage(
+				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+				NULL,
+				hr,
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				(LPWSTR)&lpMsgBuf,
+				0,
+				NULL
+			);
+			OutputDebugStringA("Failed to load texture.\n");
+			OutputDebugString((LPWSTR)lpMsgBuf);
+			LocalFree(lpMsgBuf);
+		}
 	}
 }
-void InitTextureSampler(ID3D11Device*& dev, ID3D11SamplerState*& samplerState1, ID3D11SamplerState*& samplerState2) {
+void InitTextureSampler(ID3D11Device*& dev, size_t count, std::vector<ID3D11SamplerState*>& samplers) {
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -298,12 +288,28 @@ void InitTextureSampler(ID3D11Device*& dev, ID3D11SamplerState*& samplerState1, 
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	dev->CreateSamplerState(&sampDesc, &samplerState1);
-	dev->CreateSamplerState(&sampDesc, &samplerState2);
+
+	for (size_t i = 0; i < count; i++) {
+		ID3D11SamplerState* sampler;
+		if (SUCCEEDED(dev->CreateSamplerState(&sampDesc, &sampler))) {
+			samplers.push_back(sampler);
+		}
+		else
+		{
+			OutputDebugStringA("Failed to create Texture Sampler.\n");
+		}
+
+	}
 }
-void BindTextureAndSampler(ID3D11DeviceContext*& devcon, ID3D11ShaderResourceView*& texture1, ID3D11SamplerState*& samplerState1, ID3D11ShaderResourceView*& texture2, ID3D11SamplerState*& samplerState2) {
-	devcon->PSSetShaderResources(0, 1, &texture1);
-	devcon->PSSetSamplers(0, 1, &samplerState1);
-	devcon->PSSetShaderResources(1, 1, &texture1);
-	devcon->PSSetSamplers(1, 1, &samplerState1);
+void BindTextureAndSampler(ID3D11DeviceContext*& devcon, const std::vector<ID3D11ShaderResourceView*>& textures, const std::vector<ID3D11SamplerState*>& samplers) {
+	if (textures.size() == samplers.size()) {
+		for (size_t i = 0; i < textures.size(); i++) {
+			devcon->PSSetShaderResources(i, 1, &textures[i]);
+			devcon->PSSetSamplers(i, 1, &samplers[i]);
+		}
+	}
+	else
+	{
+		OutputDebugStringA("The number of textures with sammpler are mismatch.\n");
+	}
 }

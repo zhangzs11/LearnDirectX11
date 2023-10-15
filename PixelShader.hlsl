@@ -34,8 +34,7 @@ float4 main(PixelInputType input) : SV_TARGET
     float4 textureColor = shaderTexture.Sample(SampleType, input.uv);
     
     return textureColor * diffuseIntensity;
+    //return float4(0.0f, 0.5f, 0.5f, 1.0f) * diffuseIntensity;
     //return textureColor;
     //return float4(1.0f, 0.0f, 0.0f, 1.0f);
-
-
 }
