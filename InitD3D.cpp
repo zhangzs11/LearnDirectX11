@@ -1,5 +1,5 @@
 #include "InitD3D.h"
-void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGISwapChain*& swapchain, ID3D11RenderTargetView*& backbuffer, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer, ID3D11RasterizerState*& pRasterState, ID3D11Buffer*& matrixBuffer, ID3D11Buffer*& lightBuffer, const std::vector<std::wstring>& texturepaths, std::vector<ID3D11ShaderResourceView*>& textures, std::vector<ID3D11SamplerState*>& samplers) {
+void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGISwapChain*& swapchain, ID3D11RenderTargetView*& backbuffer,ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer, ID3D11RasterizerState*& pRasterState, ID3D11Buffer*& matrixBuffer, ID3D11Buffer*& lightBuffer, const std::vector<std::wstring>& texturepaths, std::vector<ID3D11ShaderResourceView*>& textures, std::vector<ID3D11SamplerState*>& samplers) {
 	DXGI_SWAP_CHAIN_DESC scd;
 	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 
@@ -59,61 +59,12 @@ void InitD3D(HWND& hWnd, ID3D11Device*& dev, ID3D11DeviceContext*& devcon, IDXGI
 
 	devcon->RSSetViewports(1, &viewport);  // Set the viewport
 
-	InitPipeline(dev, devcon, pVertexShader, pPixelShader, pLayout);
 	InitGraphics(dev, pVertexBuffer, pIndexBuffer);
 	InitRasterizerState(dev, devcon, pRasterState);
 	InitTextureSource(dev, devcon, texturepaths, textures);
 	InitTextureSampler(dev, textures.size(), samplers);
 	BindTextureAndSampler(devcon, textures, samplers);
 	InitConstBuffer(dev, matrixBuffer, lightBuffer);
-}
-void InitPipeline(ID3D11Device*& dev, ID3D11DeviceContext*& devcon, ID3D11VertexShader*& pVertexShader, ID3D11PixelShader*& pPixelShader, ID3D11InputLayout*& pLayout) {
-	ID3DBlob* pVS, * pPS, * pErrorBlob;
-	HRESULT hrVS = D3DCompileFromFile(L"VertexShader.hlsl", 0, 0, "main", "vs_4_0", 0, 0, &pVS, &pErrorBlob);
-	if (FAILED(hrVS)) {
-		if (pErrorBlob) {
-			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
-			OutputDebugStringA("Failed to compileVS.\n");
-			pErrorBlob->Release();
-		}
-		// Handle error
-	}
-	HRESULT hrPS = D3DCompileFromFile(L"PixelShader.hlsl", 0, 0, "main", "ps_4_0", 0, 0, &pPS, &pErrorBlob);
-	if (FAILED(hrPS)) {
-		if (pErrorBlob) {
-			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
-			OutputDebugStringA("Failed to compilePS.\n");
-			pErrorBlob->Release();
-		}
-		// Handle error
-	}
-
-	dev->CreateVertexShader(pVS->GetBufferPointer(), pVS->GetBufferSize(), NULL, &pVertexShader);
-	if (!pVertexShader) {
-		OutputDebugStringA("Failed to create vertex shader.\n");
-	}
-	dev->CreatePixelShader(pPS->GetBufferPointer(), pPS->GetBufferSize(), NULL, &pPixelShader);
-	if (!pPixelShader) {
-		OutputDebugStringA("Failed to create pixel shader.\n");
-	}
-	devcon->VSSetShader(pVertexShader, 0, 0);
-	devcon->PSSetShader(pPixelShader, 0, 0);
-
-	D3D11_INPUT_ELEMENT_DESC ied[] = {
-		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-	};
-	HRESULT hr = dev->CreateInputLayout(ied, 5, pVS->GetBufferPointer(), pVS->GetBufferSize(), &pLayout);
-	if (FAILED(hr)) {
-		OutputDebugStringA("Failed to create input layout.\n");
-	}
-	devcon->IASetInputLayout(pLayout);
-
-	pVS->Release();
-	pPS->Release();
 }
 void InitGraphics(ID3D11Device*& dev, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer*& pIndexBuffer) {
 	VertexType vertices[] = {
@@ -312,4 +263,58 @@ void BindTextureAndSampler(ID3D11DeviceContext*& devcon, const std::vector<ID3D1
 	{
 		OutputDebugStringA("The number of textures with sammpler are mismatch.\n");
 	}
+}
+HRESULT CompileAndCreateShader(
+	ID3D11Device*& dev,
+	const WCHAR* vsFile,
+	const WCHAR* psFile,
+	D3D11_INPUT_ELEMENT_DESC* inputElementDescs,
+	UINT numElements,
+	Shader& outShader)
+{
+	ID3DBlob* pErrorBlob = nullptr;
+
+	// Compile Vertex Shader
+	HRESULT hrVS = D3DCompileFromFile(vsFile, 0, 0, "main", "vs_4_0", 0, 0, &outShader.pVS, &pErrorBlob);
+	if (FAILED(hrVS)) {
+		if (pErrorBlob) {
+			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
+			pErrorBlob->Release();
+		}
+		return hrVS; // Return the error code
+	}
+
+	// Compile Pixel Shader
+	HRESULT hrPS = D3DCompileFromFile(psFile, 0, 0, "main", "ps_4_0", 0, 0, &outShader.pPS, &pErrorBlob);
+	if (FAILED(hrPS)) {
+		if (pErrorBlob) {
+			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
+			pErrorBlob->Release();
+		}
+		return hrPS; // Return the error code
+	}
+
+	// Create Vertex Shader from compiled blob
+	HRESULT hrCreateVS = dev->CreateVertexShader(outShader.pVS->GetBufferPointer(), outShader.pVS->GetBufferSize(), NULL, &outShader.pVertexShader);
+	if (FAILED(hrCreateVS)) {
+		return hrCreateVS;
+	}
+
+	// Create Pixel Shader from compiled blob
+	HRESULT hrCreatePS = dev->CreatePixelShader(outShader.pPS->GetBufferPointer(), outShader.pPS->GetBufferSize(), NULL, &outShader.pPixelShader);
+	if (FAILED(hrCreatePS)) {
+		return hrCreatePS;
+	}
+
+	HRESULT hrCreateIL = dev->CreateInputLayout(inputElementDescs, numElements, outShader.pVS->GetBufferPointer(), outShader.pVS->GetBufferSize(), &outShader.pLayout);
+	if (FAILED(hrCreateIL)) {
+		return hrCreateIL;
+	}
+
+	return S_OK; // Return success code
+}
+void BindShader(ID3D11DeviceContext*& devcon, const Shader& shader) {
+	devcon->VSSetShader(shader.pVertexShader, 0, 0);
+	devcon->PSSetShader(shader.pPixelShader, 0, 0);
+	devcon->IASetInputLayout(shader.pLayout);
 }

@@ -15,11 +15,6 @@ ID3D11RenderTargetView* backbuffer;
 
 ID3D11Buffer* pVertexBuffer;
 ID3D11Buffer* pIndexBuffer;
-ID3D11VertexShader* pVS;
-ID3D11PixelShader* pPs;
-ID3D11VertexShader* pVertexShader;
-ID3D11PixelShader* pPixelShader;
-ID3D11InputLayout* pLayout;
 ID3D11Buffer* matrixBuffer;
 ID3D11Buffer* lightBuffer;
 
@@ -34,6 +29,14 @@ ID3D11SamplerState* normalsamplerState;
 ID3D11RasterizerState* pRasterState;
 
 Camera camera;
+Shader newShader;
+D3D11_INPUT_ELEMENT_DESC ied[] = {
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+};
 
 void SetTexturePathes(void);
 void UpdateConstBuffer(void);
@@ -46,8 +49,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	HWND hWnd;
 	CreateMyWindow(hWnd, hInstance, nCmdSHow);
 	SetTexturePathes();
-	InitD3D(hWnd, dev, devcon, swapchain, backbuffer, pVertexShader, pPixelShader, pLayout, pVertexBuffer, pIndexBuffer, pRasterState, matrixBuffer, lightBuffer, texturePaths, textures, samplers);
-
+	InitD3D(hWnd, dev, devcon, swapchain, backbuffer, pVertexBuffer, pIndexBuffer, pRasterState, matrixBuffer, lightBuffer, texturePaths, textures, samplers);
+	CompileAndCreateShader(dev, L"VertexShader.hlsl", L"PixelShader.hlsl", ied, sizeof(ied) / sizeof(ied[0]), newShader);
+	BindShader(devcon, newShader);
 	ShowWindow(hWnd, nCmdSHow);
 	MSG msg;
 	while (TRUE) {
@@ -108,8 +112,6 @@ void RenderFrame(void) {
 void CleanD3D(void) {
 	swapchain->Release();
 	backbuffer->Release();
-	pVertexShader->Release();
-	pPixelShader->Release();
 	dev->Release();
 	devcon->Release();
 }
