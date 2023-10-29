@@ -98,8 +98,17 @@ void InitGraphics(ID3D11Device*& dev, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer
 		{DirectX::XMFLOAT3(0.5f, -0.5f, 0.5f), DirectX::XMFLOAT3(1.0f,  0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
 		{DirectX::XMFLOAT3(0.5f,  0.5f, 0.5f), DirectX::XMFLOAT3(1.0f,  0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
 		{DirectX::XMFLOAT3(0.5f,  0.5f, -0.5f), DirectX::XMFLOAT3(1.0f,  0.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+
+		//PLATE
+		{DirectX::XMFLOAT3(-1.5f, -1.0f, -1.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(1.5f, -1.0f, -1.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(1.5f,  -1.0f, 1.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(-1.5f,  -1.0f, 1.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
 	};
 	unsigned short indices[] = {
+		24, 25, 26,
+		24, 26, 27,
+
 		0,  1,  2,
 		0,  2,  3,
 
@@ -117,6 +126,7 @@ void InitGraphics(ID3D11Device*& dev, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer
 
 		20, 21, 22,
 		20, 22, 23,
+
 	};
 	for (int i = 0; i < sizeof(indices) / sizeof(unsigned short); i += 3) {
 		VertexType& v0 = vertices[indices[i]];
