@@ -1,8 +1,13 @@
-cbuffer MatrixBuffer : register(b2)
+cbuffer MatrixBuffer : register(b0)
 {
     matrix worldMatrix;
     matrix viewMatrix;
     matrix projectionMatrix;
+};
+cbuffer LightBuffer : register(b1)
+{
+    float4 lightPosition;
+    float4 lightColor;
 };
 
 struct VertexInputType
@@ -27,7 +32,8 @@ PixelInputType main(VertexInputType input)
     output.position = mul(input.position, worldMatrix);
     output.position = mul(output.position, viewMatrix);
     output.position = mul(output.position, projectionMatrix);
-    output.depth = output.position.z / output.position.w;
+    //output.depth = output.position.z / output.position.w;
+    output.depth = length(input.position.xyz - lightPosition.xyz);
 
     return output;
 }

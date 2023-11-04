@@ -32,6 +32,7 @@ ID3D11RasterizerState* pRasterState;
 Camera camera;
 Shader mainSceneShader;
 Shader shadowMapShader;
+Shader mainSceneShaderWithShadow;
 Light light;
 
 D3D11_VIEWPORT viewport;
@@ -58,10 +59,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	CreateMyWindow(hWnd, hInstance, nCmdSHow);
 	SetTexturePathes();
 	InitD3D(hWnd, dev, devcon, swapchain, backbuffer, pVertexBuffer, pIndexBuffer, pRasterState, matrixBuffer, lightBuffer, texturePaths, textures, samplers);
-	CompileAndCreateShader(dev, L"VertexShader.hlsl", L"PixelShader.hlsl", ied, sizeof(ied) / sizeof(ied[0]), mainSceneShader);
+	//CompileAndCreateShader(dev, L"VertexShader.hlsl", L"PixelShader.hlsl", ied, sizeof(ied) / sizeof(ied[0]), mainSceneShader);
 	CompileAndCreateShader(dev, L"ShadowMapVertexShader.hlsl", L"ShadowMapPixelShader.hlsl", shadowLayout, sizeof(shadowLayout) / sizeof(shadowLayout[0]), shadowMapShader);
+	CompileAndCreateShader(dev, L"MainSceneWithShadowVertexShader.hlsl", L"MainSceneWithShadowPixelShader.hlsl", ied, sizeof(ied) / sizeof(ied[0]), mainSceneShaderWithShadow);
 	light.CreateCubeTextureAndView(1024, 1024, dev);
-	//BindShader(devcon, mainSceneShader);
+
+	BindShader(devcon, mainSceneShaderWithShadow);
+	D3D11_SAMPLER_DESC samplerDesc;
+	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;  
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;   
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;    
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;    //w inporatent for cube texture
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	ID3D11SamplerState* samplerState = nullptr;
+	dev->CreateSamplerState(&samplerDesc, &samplerState);
+	devcon->PSSetShaderResources(2, 1, &light.shaderResourceView);
+	devcon->PSSetSamplers(2, 1, &samplerState);
+
 	ShowWindow(hWnd, nCmdSHow);
 	MSG msg;
 	while (TRUE) {
@@ -88,7 +105,7 @@ void UpdateConstBuffer(void) {
 	MatrixBufferType* dataPtr;
 	LightBufferType* dataPtr2;
 
-	BindShader(devcon, mainSceneShader);
+	BindShader(devcon, mainSceneShaderWithShadow);
 	devcon->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	dataPtr = (MatrixBufferType*)mappedResource.pData;
 	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
@@ -101,8 +118,6 @@ void UpdateConstBuffer(void) {
 
 	devcon->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	dataPtr2 = (LightBufferType*)mappedResource.pData;
-	//dataPtr2->lightPosition = DirectX::XMVectorSet(2.0f, 2.0f, 0.0f, 1.0f);
-	//dataPtr2->lightColor = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f);
 	dataPtr2->lightPosition = light.lightPosition;
 	dataPtr2->lightColor = light.lightColor;
 	devcon->Unmap(lightBuffer, 0);
@@ -125,7 +140,6 @@ void RenderFrame(void) {
 		devcon->ClearDepthStencilView(light.depthStencilView[i], D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 	for (int i = 0; i < 6; ++i) {
-		// Set the render target to the current face and clear it
 		devcon->OMSetRenderTargets(0, nullptr, light.depthStencilView[i]);
 
 		devcon->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -136,7 +150,7 @@ void RenderFrame(void) {
 		dataPtr->view = DirectX::XMMatrixTranspose(light.viewMatrix[i]);
 		dataPtr->projection = DirectX::XMMatrixTranspose(projection);
 		devcon->Unmap(matrixBuffer, 0);
-		devcon->VSSetConstantBuffers(2, 1, &matrixBuffer);
+		devcon->VSSetConstantBuffers(0, 1, &matrixBuffer);
 
 
 		UINT stride = sizeof(VertexType);
@@ -145,15 +159,11 @@ void RenderFrame(void) {
 		devcon->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
 		devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		devcon->DrawIndexed(42, 0, 0);
-		// Set up your camera with 'lightPosition', 'directions[i]', and 'ups[i]'
-
-		// Render your scene from this point of view
 	}
-	//depthStencilViewForThisFace->Release();//Important!
-
 	//render the main scene
 	UpdateConstBuffer();
 	devcon->OMSetRenderTargets(1, &backbuffer, NULL);
+	devcon->PSSetShaderResources(2, 1, &light.shaderResourceView);
 	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
 
 	viewport.TopLeftX = 0;
@@ -164,7 +174,7 @@ void RenderFrame(void) {
 	viewport.MaxDepth = 1.0f;
 
 	devcon->RSSetViewports(1, &viewport);  // Set the viewport
-	BindShader(devcon, mainSceneShader);
+	BindShader(devcon, mainSceneShaderWithShadow);
 	float color[4] = { 0.0f, 0.9f, 0.4f, 1.0f };
 	devcon->ClearRenderTargetView(backbuffer, color);
 
@@ -173,7 +183,7 @@ void RenderFrame(void) {
 	devcon->IASetVertexBuffers(0, 1, &pVertexBuffer, &stride, &offset);
 	devcon->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
 	devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	devcon->DrawIndexed(42, 0, 0);
+	devcon->DrawIndexed(48, 0, 0);
 
 	swapchain->Present(0, 0);
 }

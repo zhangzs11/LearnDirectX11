@@ -100,12 +100,22 @@ void InitGraphics(ID3D11Device*& dev, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer
 		{DirectX::XMFLOAT3(0.5f,  0.5f, -0.5f), DirectX::XMFLOAT3(1.0f,  0.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
 
 		//PLATE
-		{DirectX::XMFLOAT3(-1.5f, -1.0f, -1.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
-		{DirectX::XMFLOAT3(1.5f, -1.0f, -1.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
-		{DirectX::XMFLOAT3(1.5f,  -1.0f, 1.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
-		{DirectX::XMFLOAT3(-1.5f,  -1.0f, 1.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(-1.5f, -2.0f, -1.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(1.5f, -2.0f, -1.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(1.5f,  -2.0f, 1.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(-1.5f,  -2.0f, 1.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+	
+		//PLATE2
+		{DirectX::XMFLOAT3(-2.5f, -3.0f, -2.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(2.5f, -3.0f, -2.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(2.5f,  -3.0f, 2.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
+		{DirectX::XMFLOAT3(-2.5f,  -3.0f, 2.5f), DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f),DirectX::XMFLOAT3(0.0f,  0.0f, 0.0f)},
 	};
 	unsigned short indices[] = {
+
+		28, 29, 30,
+		28, 30, 31,
+
 		24, 25, 26,
 		24, 26, 27,
 
@@ -126,7 +136,6 @@ void InitGraphics(ID3D11Device*& dev, ID3D11Buffer*& pVertexBuffer, ID3D11Buffer
 
 		20, 21, 22,
 		20, 22, 23,
-
 	};
 	for (int i = 0; i < sizeof(indices) / sizeof(unsigned short); i += 3) {
 		VertexType& v0 = vertices[indices[i]];
@@ -285,7 +294,7 @@ HRESULT CompileAndCreateShader(
 	ID3DBlob* pErrorBlob = nullptr;
 
 	// Compile Vertex Shader
-	HRESULT hrVS = D3DCompileFromFile(vsFile, 0, 0, "main", "vs_4_0", 0, 0, &outShader.pVS, &pErrorBlob);
+	HRESULT hrVS = D3DCompileFromFile(vsFile, 0, 0, "main", "vs_5_0", 0, 0, &outShader.pVS, &pErrorBlob);
 	if (FAILED(hrVS)) {
 		if (pErrorBlob) {
 			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
@@ -295,7 +304,7 @@ HRESULT CompileAndCreateShader(
 	}
 
 	// Compile Pixel Shader
-	HRESULT hrPS = D3DCompileFromFile(psFile, 0, 0, "main", "ps_4_0", 0, 0, &outShader.pPS, &pErrorBlob);
+	HRESULT hrPS = D3DCompileFromFile(psFile, 0, 0, "main", "ps_5_0", 0, 0, &outShader.pPS, &pErrorBlob);
 	if (FAILED(hrPS)) {
 		if (pErrorBlob) {
 			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());

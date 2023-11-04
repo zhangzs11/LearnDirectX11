@@ -1,4 +1,4 @@
-cbuffer LightBuffer : register(b1)
+cbuffer LightBuffer : register(b2)
 {
     float4 lightPosition;
     float4 lightColor;
@@ -10,16 +10,19 @@ SamplerState SampleType : register(s0);
 Texture2D normalMap : register(t1);
 SamplerState NormalMapSample : register(s1);
 
-struct PixelInputType
+TextureCube shadowMapCube : register(t2);
+SamplerState ShadowMapSample : register(s2);
+
+struct MainScenePixelInputType
 {
     float4 position : SV_POSITION;
     float3 normal : NORMAL;
     float4 worldPos : TEXCOORD0;
     float2 uv : TEXCOORD1;
-    matrix tbn : TEXCOORD2;
+    matrix tbn : TEXCOORD3;
+    float3 toLight : TEXCOORD2;
 };
-
-float4 main(PixelInputType input) : SV_TARGET
+float4 main(MainScenePixelInputType input) : SV_TARGET
 {
     //Sample the normal map
     float3 normalFromMap = normalMap.Sample(NormalMapSample, input.uv).xyz;
@@ -33,8 +36,12 @@ float4 main(PixelInputType input) : SV_TARGET
     
     float4 textureColor = shaderTexture.Sample(SampleType, input.uv);
     
-    return textureColor * diffuseIntensity;
-    //return float4(0.0f, 0.5f, 0.5f, 1.0f) * diffuseIntensity;
-    //return textureColor;
-    //return float4(1.0f, 0.0f, 0.0f, 1.0f);
+    float shadowDepth = shadowMapCube.Sample(ShadowMapSample, -input.toLight).r;
+    // The negative sign (-input.toLight) is to fetch the depth in the direction of the light from the point in the scene.
+    float currentDepth = length(input.worldPos.xyz - lightPosition.xyz);
+    // Calculate distance from the current fragment to the light source
+
+    float shadow = currentDepth > shadowDepth + 0.005 ? 0.5 : 1.0;
+    
+    return textureColor * diffuseIntensity * shadow;
 }

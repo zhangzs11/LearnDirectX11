@@ -19,6 +19,7 @@ struct LightBufferType
 	DirectX::XMVECTOR lightPosition;
 	DirectX::XMVECTOR lightColor;
 };
+
 struct Shader {
 	ID3D11VertexShader* pVertexShader = nullptr;
 	ID3D11PixelShader* pPixelShader = nullptr;
