@@ -54,4 +54,5 @@ float4 main(MainScenePixelInputType input) : SV_TARGET
     //return float4(shadowDepth, shadowDepth, shadowDepth, 1);
     //return float4(currentDepth/3, currentDepth/3, currentDepth/3, 1.0f);
     //return float4(shadow, shadow, shadow, 1.0f);
+    //return float4(depthView/10, 0, 0, 1.0f);
 }

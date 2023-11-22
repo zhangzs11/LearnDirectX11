@@ -32,8 +32,8 @@ PixelInputType main(VertexInputType input)
     output.position = mul(input.position, worldMatrix);
     output.position = mul(output.position, viewMatrix);
     output.position = mul(output.position, projectionMatrix);
-    //output.depth = output.position.z / output.position.w;
-    output.depth = length(input.position.xyz - lightPosition.xyz);
+    output.depth = output.position.z / output.position.w;
+    //output.depth = length(input.position.xyz - lightPosition.xyz);
 
     return output;
 }

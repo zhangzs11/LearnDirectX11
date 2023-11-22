@@ -4,7 +4,7 @@
 class Light {
 public:
 	Light() {
-		lightPosition = DirectX::XMVectorSet(2.0f, 0.0f, 0.0f, 1.0f);
+		lightPosition = DirectX::XMVectorSet(0.0f, 0.0f, 2.0f, 1.0f);
 		lightColor = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f);
 		UpdateViewMatrix();
 	}
@@ -15,7 +15,7 @@ public:
 	D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 
-	DirectX::XMVECTOR lightPosition;
+	DirectX::XMVECTOR lightPosition = DirectX::XMVectorSet(0.0f, 0.0f, 2.0f, 1.0f);
 	DirectX::XMVECTOR lightColor;
 	DirectX::XMMATRIX viewMatrix[6];
 

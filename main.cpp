@@ -152,7 +152,6 @@ void RenderFrame(void) {
 		devcon->Unmap(matrixBuffer, 0);
 		devcon->VSSetConstantBuffers(0, 1, &matrixBuffer);
 
-
 		UINT stride = sizeof(VertexType);
 		UINT offset = 0;
 		devcon->IASetVertexBuffers(0, 1, &pVertexBuffer, &stride, &offset);
